@@ -27,7 +27,7 @@ def index():
                 data = leer_pdf_fel(path)
 
             else:
-                return "Archivo no válido. Use XML o PDF.", 400
+                return "Archivo no válido. Use PDF o XML.", 400
 
             generar_ticket(data, "ticket.png")
             return send_file("ticket.png", mimetype="image/png")

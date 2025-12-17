@@ -13,39 +13,37 @@ def leer_pdf_fel(pdf_path):
     if not texto.strip():
         raise ValueError("El PDF no contiene texto legible")
 
-    # UUID SAT
-    uuid_match = re.search(
+    uuid = re.search(
         r"[A-F0-9]{8}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{12}",
         texto
     )
 
-    # TOTAL SAT (TOTALES: 0.00 750.00)
-    total_match = re.search(
+    total = re.search(
         r"TOTALES:\s*[\d\.]+\s*([\d\.]+)",
         texto
     )
 
-    # NIT Emisor
-    nit_match = re.search(
+    nit_emisor = re.search(
         r"Nit Emisor:\s*([\d]+)",
         texto,
         re.IGNORECASE
     )
 
-    # Empresa (primera línea útil)
+    receptor = re.search(
+        r"NIT Receptor:\s*([\d]+)",
+        texto,
+        re.IGNORECASE
+    )
+
     empresa = texto.split("\n")[1].strip()
 
-    if not uuid_match or not total_match or not nit_match:
-        raise ValueError(
-            "No se pudieron extraer los datos del PDF SAT.\n"
-            f"UUID: {bool(uuid_match)}\n"
-            f"TOTAL: {bool(total_match)}\n"
-            f"NIT: {bool(nit_match)}"
-        )
+    if not uuid or not total or not nit_emisor:
+        raise ValueError("No se pudieron extraer los datos del PDF SAT")
 
     return {
         "empresa": empresa,
-        "nit": nit_match.group(1),
-        "total": total_match.group(1),
-        "uuid": uuid_match.group(0)
+        "nit_emisor": nit_emisor.group(1),
+        "id_receptor": receptor.group(1) if receptor else "CF",
+        "total": total.group(1),
+        "uuid": uuid.group(0)
     }

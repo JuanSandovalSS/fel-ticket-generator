@@ -13,15 +13,24 @@ def leer_fel(xml_path):
     dte = list(ns.values())[0]
 
     emisor = xml.find(f".//{{{dte}}}Emisor")
+    receptor = xml.find(f".//{{{dte}}}Receptor")
+
     total = xml.find(f".//{{{dte}}}GranTotal").text
     uuid = xml.find(f".//{{{dte}}}NumeroAutorizacion").text
 
     empresa = emisor.get("NombreComercial") or emisor.get("Nombre")
-    nit = emisor.get("NITEmisor")
+    nit_emisor = emisor.get("NITEmisor")
+
+    id_receptor = (
+        receptor.get("IDReceptor") or
+        receptor.get("NITReceptor") or
+        "CF"
+    )
 
     return {
         "empresa": empresa,
-        "nit": nit,
+        "nit_emisor": nit_emisor,
+        "id_receptor": id_receptor,
         "total": total,
         "uuid": uuid
     }
@@ -30,15 +39,19 @@ def leer_fel(xml_path):
 # GENERADOR DE TICKET PNG
 # =============================
 def generar_ticket(data, output="ticket.png"):
-    ANCHO_MM = 80
+    # ==== CONFIG 58mm ====
+    ANCHO_MM = 58
     DPI = 203
+    MARGEN = 4
+    QR_SIZE = 160
+
     ANCHO_PX = int(ANCHO_MM / 25.4 * DPI)
 
-    img = Image.new("RGB", (ANCHO_PX, 600), "white")
+    img = Image.new("RGB", (ANCHO_PX, 650), "white")
     d = ImageDraw.Draw(img)
     font = ImageFont.load_default()
 
-    y = 10
+    y = 8
 
     def center(text):
         nonlocal y
@@ -46,25 +59,43 @@ def generar_ticket(data, output="ticket.png"):
         w = bbox[2] - bbox[0]
         h = bbox[3] - bbox[1]
         d.text(((ANCHO_PX - w) // 2, y), text, fill="black", font=font)
-        y += h + 6
+        y += h + 4
 
+    def left(text):
+        nonlocal y
+        bbox = d.textbbox((0, 0), text, font=font)
+        h = bbox[3] - bbox[1]
+        d.text((MARGEN, y), text, fill="black", font=font)
+        y += h + 3
+
+    # ==== ENCABEZADO ====
     center(data["empresa"])
-    center(f"NIT: {data['nit']}")
-    y += 10
-    center(f"TOTAL Q {data['total']}")
-    y += 15
+    y += 6
 
+    # ==== DATOS FISCALES ====
+    left(f"NIT Emisor: {data['nit_emisor']}")
+    left(f"ID Receptor: {data['id_receptor']}")
+    left("No. Autorización:")
+    left(data["uuid"])
+    y += 6
+
+    # ==== TOTAL ====
+    center(f"TOTAL Q {data['total']}")
+    y += 8
+
+    # ==== QR SAT ====
     url = (
         "https://felpub.c.sat.gob.gt/verificador-web/"
         "publico/vistas/verificacionDte.jsf?uuid="
         + data["uuid"]
     )
 
-    qr = qrcode.make(url).resize((200, 200))
-    img.paste(qr, ((ANCHO_PX - 200) // 2, y))
-    y += 210
+    qr = qrcode.make(url).resize((QR_SIZE, QR_SIZE))
+    img.paste(qr, ((ANCHO_PX - QR_SIZE) // 2, y))
+    y += QR_SIZE + 8
 
     center("Gracias por su compra")
 
-    img = img.crop((0, 0, ANCHO_PX, y + 10))
+    img = img.crop((0, 0, ANCHO_PX, y + 6))
     img.save(output)
+
