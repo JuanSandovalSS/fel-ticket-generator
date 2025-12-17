@@ -50,13 +50,12 @@ def generar_ticket(data, output="ticket.png"):
 
     ANCHO_PX = int(ANCHO_MM / 25.4 * DPI)
 
-    img = Image.new("RGB", (ANCHO_PX, 800), "white")
+    img = Image.new("RGB", (ANCHO_PX, 760), "white")
     d = ImageDraw.Draw(img)
 
-    # ===== FUENTES =====
     BASE = os.path.dirname(__file__)
+
     font_store = ImageFont.truetype(f"{BASE}/fonts/DejaVuSans-Bold.ttf", 24)
-    font_company = ImageFont.truetype(f"{BASE}/fonts/DejaVuSans-Bold.ttf", 16)
     font_data = ImageFont.truetype(f"{BASE}/fonts/DejaVuSans-Bold.ttf", 15)
     font_total = ImageFont.truetype(f"{BASE}/fonts/DejaVuSans-Bold.ttf", 28)
     font_footer = ImageFont.truetype(f"{BASE}/fonts/DejaVuSans-Bold.ttf", 14)
@@ -78,20 +77,19 @@ def generar_ticket(data, output="ticket.png"):
         d.text((MARGEN, y), text, fill="black", font=font)
         y += h + space
 
-    # ===== ENCABEZADO =====
-    center("BOUTIQUE DON JUAN", font_store, 10)
-    center(data["empresa"], font_company, 12)
+    # ===== NOMBRE COMERCIAL =====
+    center("BOUTIQUE DON JUAN", font_store, 12)
 
     # ===== DATOS FISCALES =====
     left(f"NIT Emisor: {data['nit_emisor']}", font_data)
     left(f"ID Receptor: {data['id_receptor']}", font_data)
     left("No. Autorización:", font_data)
-    left(data["uuid"], font_data, 8)
+    left(data["uuid"], font_data, 10)
 
     # ===== TOTAL =====
     center(f"TOTAL Q {data['total']}", font_total, 14)
 
-    # ===== QR =====
+    # ===== QR SAT =====
     url = (
         "https://felpub.c.sat.gob.gt/verificador-web/"
         "publico/vistas/verificacionDte.jsf?uuid="
