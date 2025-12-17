@@ -8,7 +8,11 @@ app = Flask(__name__)
 @app.route("/", methods=["GET", "POST"])
 def index():
     if request.method == "POST":
-        file = request.files["xml"]
+        file = request.files.get("file")
+
+        if not file:
+            return "No se subió archivo", 400
+
         filename = file.filename.lower()
 
         if filename.endswith(".xml"):
@@ -21,8 +25,10 @@ def index():
             file.save(path)
             data = leer_pdf_fel(path)
 
-        generar_ticket(data, "ticket.png")
+        else:
+            return "Archivo no válido", 400
 
+        generar_ticket(data, "ticket.png")
         return send_file("ticket.png", mimetype="image/png")
 
     return render_template("index.html")

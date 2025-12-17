@@ -16,20 +16,25 @@ FUENTE = ImageFont.load_default()
 # LEER XML FEL
 # =============================
 def leer_fel(xml_path):
-    ns = {'dte': 'http://www.sat.gob.gt/dte/fel/0.2.0'}
     xml = etree.parse(xml_path)
+    root = xml.getroot()
 
-    emisor = xml.find('.//dte:Emisor', ns)
-    total = xml.find('.//dte:GranTotal', ns).text
-    uuid = xml.find('.//dte:NumeroAutorizacion', ns).text
+    ns = root.nsmap
+    dte = list(ns.values())[0]
+
+    emisor = xml.find(f".//{{{dte}}}Emisor")
+    total = xml.find(f".//{{{dte}}}GranTotal").text
+    uuid = xml.find(f".//{{{dte}}}NumeroAutorizacion").text
+
+    empresa = emisor.get("NombreComercial") or emisor.get("Nombre")
+    nit = emisor.get("NITEmisor")
 
     return {
-        "empresa": emisor.get("NombreComercial"),
-        "nit": emisor.get("NITEmisor"),
+        "empresa": empresa,
+        "nit": nit,
         "total": total,
         "uuid": uuid
     }
-
 # =============================
 # GENERAR TICKET
 # =============================
