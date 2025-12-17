@@ -39,7 +39,7 @@ def leer_fel(xml_path):
 # GENERADOR DE TICKET PNG
 # =============================
 def generar_ticket(data, output="ticket.png"):
-    # ==== CONFIG 58mm ====
+    # ===== CONFIG 58mm =====
     ANCHO_MM = 58
     DPI = 203
     MARGEN = 4
@@ -47,43 +47,46 @@ def generar_ticket(data, output="ticket.png"):
 
     ANCHO_PX = int(ANCHO_MM / 25.4 * DPI)
 
-    img = Image.new("RGB", (ANCHO_PX, 650), "white")
+    img = Image.new("RGB", (ANCHO_PX, 720), "white")
     d = ImageDraw.Draw(img)
     font = ImageFont.load_default()
 
     y = 8
 
-    def center(text):
+    def center(text, space=4):
         nonlocal y
         bbox = d.textbbox((0, 0), text, font=font)
         w = bbox[2] - bbox[0]
         h = bbox[3] - bbox[1]
         d.text(((ANCHO_PX - w) // 2, y), text, fill="black", font=font)
-        y += h + 4
+        y += h + space
 
-    def left(text):
+    def left(text, space=3):
         nonlocal y
         bbox = d.textbbox((0, 0), text, font=font)
         h = bbox[3] - bbox[1]
         d.text((MARGEN, y), text, fill="black", font=font)
-        y += h + 3
+        y += h + space
 
-    # ==== ENCABEZADO ====
-    center(data["empresa"])
-    y += 6
+    # ===== NOMBRE COMERCIAL =====
+    center("BOUTIQUE DON JUAN", 8)
 
-    # ==== DATOS FISCALES ====
+    # ===== NOMBRE FISCAL =====
+    center(data["empresa"], 10)
+
+    # ===== DATOS FISCALES =====
     left(f"NIT Emisor: {data['nit_emisor']}")
     left(f"ID Receptor: {data['id_receptor']}")
+    y += 4
+
     left("No. Autorización:")
     left(data["uuid"])
-    y += 6
-
-    # ==== TOTAL ====
-    center(f"TOTAL Q {data['total']}")
     y += 8
 
-    # ==== QR SAT ====
+    # ===== TOTAL =====
+    center(f"TOTAL Q {data['total']}", 10)
+
+    # ===== QR SAT =====
     url = (
         "https://felpub.c.sat.gob.gt/verificador-web/"
         "publico/vistas/verificacionDte.jsf?uuid="
@@ -92,10 +95,9 @@ def generar_ticket(data, output="ticket.png"):
 
     qr = qrcode.make(url).resize((QR_SIZE, QR_SIZE))
     img.paste(qr, ((ANCHO_PX - QR_SIZE) // 2, y))
-    y += QR_SIZE + 8
+    y += QR_SIZE + 10
 
-    center("Gracias por su compra")
+    center("Gracias por su compra", 6)
 
-    img = img.crop((0, 0, ANCHO_PX, y + 6))
+    img = img.crop((0, 0, ANCHO_PX, y + 8))
     img.save(output)
-
