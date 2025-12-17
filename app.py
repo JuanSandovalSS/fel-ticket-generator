@@ -30,8 +30,13 @@ def index():
                 return "Archivo no válido. Use PDF o XML.", 400
 
             generar_ticket(data, "ticket.png")
-            return send_file("ticket.png", mimetype="image/png")
-
+            return send_file(
+                "ticket.png",
+                mimetype="image/png",
+                as_attachment=True,
+                download_name="ticket_fel.png"
+            )
+ 
         except Exception as e:
             return f"Error procesando archivo: {str(e)}", 400
 
