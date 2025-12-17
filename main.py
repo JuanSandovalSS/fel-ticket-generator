@@ -1,6 +1,8 @@
+import os
 from PIL import Image, ImageDraw, ImageFont
 import qrcode
 from lxml import etree
+
 
 # =============================
 # LECTOR XML FEL
