@@ -1,19 +1,9 @@
-from lxml import etree
 from PIL import Image, ImageDraw, ImageFont
 import qrcode
-import sys
+from lxml import etree
 
 # =============================
-# CONFIGURACIÓN
-# =============================
-ANCHO_MM = 80
-DPI = 203  # impresoras térmicas
-ANCHO_PX = int(ANCHO_MM / 25.4 * DPI)
-
-FUENTE = ImageFont.load_default()
-
-# =============================
-# LEER XML FEL
+# LECTOR XML FEL
 # =============================
 def leer_fel(xml_path):
     xml = etree.parse(xml_path)
@@ -35,30 +25,35 @@ def leer_fel(xml_path):
         "total": total,
         "uuid": uuid
     }
+
 # =============================
-# GENERAR TICKET
+# GENERADOR DE TICKET PNG
 # =============================
 def generar_ticket(data, output="ticket.png"):
-    alto_px = 600
-    img = Image.new("RGB", (ANCHO_PX, alto_px), "white")
+    ANCHO_MM = 80
+    DPI = 203
+    ANCHO_PX = int(ANCHO_MM / 25.4 * DPI)
+
+    img = Image.new("RGB", (ANCHO_PX, 600), "white")
     d = ImageDraw.Draw(img)
+    font = ImageFont.load_default()
 
     y = 10
-    centro = ANCHO_PX // 2
 
-    def texto(t, bold=False):
+    def center(text):
         nonlocal y
-        w, h = d.textsize(t, font=FUENTE)
-        d.text(((ANCHO_PX - w)//2, y), t, fill="black", font=FUENTE)
-        y += h + 5
+        bbox = d.textbbox((0, 0), text, font=font)
+        w = bbox[2] - bbox[0]
+        h = bbox[3] - bbox[1]
+        d.text(((ANCHO_PX - w) // 2, y), text, fill="black", font=font)
+        y += h + 6
 
-    texto(data["empresa"])
-    texto(f"NIT: {data['nit']}")
+    center(data["empresa"])
+    center(f"NIT: {data['nit']}")
     y += 10
-    texto(f"TOTAL: Q {data['total']}")
+    center(f"TOTAL Q {data['total']}")
     y += 15
 
-    # QR SAT
     url = (
         "https://felpub.c.sat.gob.gt/verificador-web/"
         "publico/vistas/verificacionDte.jsf?uuid="
@@ -66,22 +61,10 @@ def generar_ticket(data, output="ticket.png"):
     )
 
     qr = qrcode.make(url).resize((200, 200))
-    img.paste(qr, (centro - 100, y))
+    img.paste(qr, ((ANCHO_PX - 200) // 2, y))
     y += 210
 
-    texto("Gracias por su compra")
+    center("Gracias por su compra")
 
     img = img.crop((0, 0, ANCHO_PX, y + 10))
     img.save(output)
-    print(f"✅ Ticket generado: {output}")
-
-# =============================
-# MAIN
-# =============================
-if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print("Uso: python main.py factura.xml")
-        sys.exit(1)
-
-    datos = leer_fel(sys.argv[1])
-    generar_ticket(datos)
