@@ -38,6 +38,7 @@ def leer_fel(xml_path):
 # =============================
 # GENERADOR DE TICKET PNG
 # =============================
+
 def generar_ticket(data, output="ticket.png"):
     # ===== CONFIG 58mm =====
     ANCHO_MM = 58
@@ -47,13 +48,20 @@ def generar_ticket(data, output="ticket.png"):
 
     ANCHO_PX = int(ANCHO_MM / 25.4 * DPI)
 
-    img = Image.new("RGB", (ANCHO_PX, 720), "white")
+    img = Image.new("RGB", (ANCHO_PX, 800), "white")
     d = ImageDraw.Draw(img)
-    font = ImageFont.load_default()
 
-    y = 8
+    # ===== FUENTES =====
+    BASE = os.path.dirname(__file__)
+    font_store = ImageFont.truetype(f"{BASE}/fonts/DejaVuSans-Bold.ttf", 24)
+    font_company = ImageFont.truetype(f"{BASE}/fonts/DejaVuSans-Bold.ttf", 16)
+    font_data = ImageFont.truetype(f"{BASE}/fonts/DejaVuSans-Bold.ttf", 15)
+    font_total = ImageFont.truetype(f"{BASE}/fonts/DejaVuSans-Bold.ttf", 28)
+    font_footer = ImageFont.truetype(f"{BASE}/fonts/DejaVuSans-Bold.ttf", 14)
 
-    def center(text, space=4):
+    y = 10
+
+    def center(text, font, space=6):
         nonlocal y
         bbox = d.textbbox((0, 0), text, font=font)
         w = bbox[2] - bbox[0]
@@ -61,32 +69,27 @@ def generar_ticket(data, output="ticket.png"):
         d.text(((ANCHO_PX - w) // 2, y), text, fill="black", font=font)
         y += h + space
 
-    def left(text, space=3):
+    def left(text, font, space=4):
         nonlocal y
         bbox = d.textbbox((0, 0), text, font=font)
         h = bbox[3] - bbox[1]
         d.text((MARGEN, y), text, fill="black", font=font)
         y += h + space
 
-    # ===== NOMBRE COMERCIAL =====
-    center("BOUTIQUE DON JUAN", 8)
-
-    # ===== NOMBRE FISCAL =====
-    center(data["empresa"], 10)
+    # ===== ENCABEZADO =====
+    center("BOUTIQUE DON JUAN", font_store, 10)
+    center(data["empresa"], font_company, 12)
 
     # ===== DATOS FISCALES =====
-    left(f"NIT Emisor: {data['nit_emisor']}")
-    left(f"ID Receptor: {data['id_receptor']}")
-    y += 4
-
-    left("No. Autorización:")
-    left(data["uuid"])
-    y += 8
+    left(f"NIT Emisor: {data['nit_emisor']}", font_data)
+    left(f"ID Receptor: {data['id_receptor']}", font_data)
+    left("No. Autorización:", font_data)
+    left(data["uuid"], font_data, 8)
 
     # ===== TOTAL =====
-    center(f"TOTAL Q {data['total']}", 10)
+    center(f"TOTAL Q {data['total']}", font_total, 14)
 
-    # ===== QR SAT =====
+    # ===== QR =====
     url = (
         "https://felpub.c.sat.gob.gt/verificador-web/"
         "publico/vistas/verificacionDte.jsf?uuid="
@@ -95,9 +98,9 @@ def generar_ticket(data, output="ticket.png"):
 
     qr = qrcode.make(url).resize((QR_SIZE, QR_SIZE))
     img.paste(qr, ((ANCHO_PX - QR_SIZE) // 2, y))
-    y += QR_SIZE + 10
+    y += QR_SIZE + 12
 
-    center("Gracias por su compra", 6)
+    center("Gracias por su compra", font_footer, 8)
 
-    img = img.crop((0, 0, ANCHO_PX, y + 8))
+    img = img.crop((0, 0, ANCHO_PX, y + 10))
     img.save(output)
